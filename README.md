@@ -1053,6 +1053,7 @@ function nodeToObject(vnode) {
   return h(flag.tag, flag.props, flag.children)
 }
 ```
+```js
 41.vue中计算属性如何根据data里的值发生改变
 计算属性通常依赖于其他数据属性。对于依赖属性的任何改变都会触发计算属性的逻辑。计算属性基于它们的依赖关系进行缓存，因此只有当依赖项发生变化时，它们才会重新运行，否则他会使用缓存中的属性值。计算属性在默认情况下是getters，但是如果需要实现类似的功能，则可以设置setter函数。
 
