@@ -1,174 +1,200 @@
 # 2020-前端面试题大全
 总结今年校招以来的所有前端面试题
 ```
-## 1.HTTPS详细工作原理:
+## 1.HTTPS流程
 
-1.浏览器将自己支持的一套加密规则发送给网站，如RSA加密算法，DES对称加密算法，SHA1摘要算法
-2.网站从中选出一组加密算法与HASH算法，并将自己的身份信息以证书的形式发回给浏览器。证书里面包含了网站地址，加密公钥，以及证书的颁发机构等信息（证书中的私钥只能用于服务器端进行解密，在握手的整个过程中，都用到了证书中的公钥和浏览器发送给服务器的随机密码以及对称加密算法）
-3.获得网站证书之后浏览器要做以下工作：
-a) 验证证书的合法性（颁发证书的机构是否合法，证书中包含的网站地址是否与正在访问的地址一致等），如果证书受信任，则浏览器栏里面会显示一个小锁头，否则会给出证书不受信的提示。
-b) 如果证书受信任，或者是用户接受了不受信的证书，浏览器会生成一串随机数的密码（这其实就是用于之后数据通信的对称加密算法的秘钥），并用证书中提供的公钥加密（对秘钥的加密采用非对称的方法）。
-c) 使用约定好的HASH算法计算握手消息，并使用生成的随机数（对称算法的秘钥）对消息进行加密，最后将之前生成的被公钥加密的随机数密码，HASH摘要值（已经被对称算法加密）一起发送给服务器
+* 首先客户端通过URL访问服务器建立SSL连接
+
+* 服务端收到客户端请求后，会将网站支持的证书信息（证书中包含公钥）传送一份给客户端。  
+* 客户端的服务器开始协商SSL连接的安全等级，也就是信息加密的等级。
+* 客户端的浏览器根据双方同意的安全等级，建立会话密钥，然后利用网站的公钥将会话密钥加密，并传送给网站。
+* 服务器利用自己的私钥解密出会话密钥。
+* 服务器利用会话密钥加密与客户端之间的通信。
+
+### HTTPS详细工作原理:
+* 1.浏览器将自己支持的一套加密规则发送给网站，如RSA加密算法，DES对称加密算法，SHA1摘要算法
+* 2.网站从中选出一组加密算法与HASH算法，并将自己的身份信息以证书的形式发回给浏览器。证书里面包含了网站地址，加密公钥，以及证书的颁发机构等信息（证书中的私钥只能用于服务器端进行解密，在握手的整个过程中，都用到了证书中的公钥和浏览器发送给服务器的随机密码以及对称加密算法）
+* 3.获得网站证书之后浏览器要做以下工作：
+  - a) 验证证书的合法性（颁发证书的机构是否合法，证书中包含的网站地址是否与正在访问的地址一致等），如果证书受信任，则浏览器栏里面会显示一个小锁头，否则会给出证书不受信的提示。
+  - b) 如果证书受信任，或者是用户接受了不受信的证书，浏览器会生成一串随机数的密码（这其实就是用于之后数据通信的对称加密算法的秘钥），并用证书中提供的公钥加密（对秘钥的加密采用非对称的方法）。
+  - c) 使用约定好的HASH算法计算握手消息，并使用生成的随机数（对称算法的秘钥）对消息进行加密，最后将之前生成的被公钥加密的随机数密码，HASH摘要值（已经被对称算法加密）一起发送给服务器
 hash(握手),公钥(random)，random(hash(握手))
-4.网站接收浏览器发来的数据之后要做以下的操作：
-a) 使用自己的私钥将信息解密并取出浏览器发送给服务器的随机密码（得到了对称加密算法的秘钥），使用密码解密浏览器发来的握手消息（用对称算法的秘钥解HASH摘要值），并验证HASH是否与浏览器发来的一致。
-b) 使用随机密码加密一段握手消息，发送给浏览器。
+* 4.网站接收浏览器发来的数据之后要做以下的操作：
+  - a) 使用自己的私钥将信息解密并取出浏览器发送给服务器的随机密码（得到了对称加密算法的秘钥），使用密码解密浏览器发来的握手消息（用对称算法的秘钥解HASH摘要值），并验证HASH是否与浏览器发来的一致。
+  - b) 使用随机密码加密一段握手消息，发送给浏览器。
 random(握手)，hash(握手)
-5.浏览器解密并计算握手消息的HASH，如果与服务端发来的HASH一致，此时握手过程结束，之后所有的通信数据将由之前浏览器生成的随机密码并利用对称加密算法进行加密。
+* 5.浏览器解密并计算握手消息的HASH，如果与服务端发来的HASH一致，此时握手过程结束，之后所有的通信数据将由之前浏览器生成的随机密码并利用对称加密算法进行加密。
 
 从上面的4个大的步骤可以看到，握手的整个过程使用到了数字证书、对称加密、HASH摘要，非对称加密算法。
 
 ## 2.http与https的区别
 
-http是超文本传输协议，构建与TCP/IP协议之上，默认端口号为80，处于网络体系结构的最顶层应用层上，Http协议采用的是请求/响应的工作方式。Http是无连接无状态的。
-HTTPS是HTTP协议的安全版本，HTTP协议的数据传输是明文的，是不安全的，HTTPS使用了SSL/TLS协议进行了加密处理和身份认证
-http和https使用连接方式不同，默认端口也不一样，http是80，https是443。
-https协议需要到ca申请证书，一般免费证书较少，因而需要一定费用。
-http的连接很简单，是无状态的；
-HTTPS协议是由SSL+HTTP协议构建的可进行加密传输、身份认证的网络协议，比http协议安全。
-HTTPS可以有效的防止运营商劫持，解决了防劫持的一个大问题。
+* http是超文本传输协议，构建与TCP/IP协议之上，默认端口号为80，处于网络体系结构的最顶层应用层上，Http协议采用的是请求/响应的工作方式。Http是无连接无状态的。
+* HTTPS是HTTP协议的安全版本，HTTP协议的数据传输是明文的，是不安全的，HTTPS使用了SSL/TLS协议进行了加密处理和身份认证
+* http和https使用连接方式不同，默认端口也不一样，http是80，https是443。
+* https协议需要到ca申请证书，一般免费证书较少，因而需要一定费用。
+* http的连接很简单，是无状态的；
+* HTTPS协议是由SSL+HTTP协议构建的可进行加密传输、身份认证的网络协议，比http协议安全。
+* HTTPS可以有效的防止运营商劫持，解决了防劫持的一个大问题。
 
 ## 3.https流程
+
 客户端在使用HTTPS方式与Web服务器通信时有以下几个步骤，如图所示。
-　　（1）客户使用https的URL访问Web服务器，要求与Web服务器建立SSL连接。
-　　（2）Web服务器收到客户端请求后，会将网站的证书信息（证书中包含公钥）传送一份给客户端。
-　　（3）客户端的浏览器与Web服务器开始协商SSL连接的安全等级，也就是信息加密的等级。
-　　（4）客户端的浏览器根据双方同意的安全等级，建立会话密钥，然后利用网站的公钥将会话密钥加密，并传送给网站。
-　　（5）Web服务器利用自己的私钥解密出会话密钥。
-　　（6）Web服务器利用会话密钥加密与客户端之间的通信。
+* 　　（1）客户使用https的URL访问Web服务器，要求与Web服务器建立SSL连接。
+* 　　（2）Web服务器收到客户端请求后，会将网站的证书信息（证书中包含公钥）传送一份给客户端。
+* 　　（3）客户端的浏览器与Web服务器开始协商SSL连接的安全等级，也就是信息加密的等级。
+* 　　（4）客户端的浏览器根据双方同意的安全等级，建立会话密钥，然后利用网站的公钥将会话密钥加密，并传送给网站。
+* 　　（5）Web服务器利用自己的私钥解密出会话密钥。
+* 　　（6）Web服务器利用会话密钥加密与客户端之间的通信。
+
 ## 4.HTTPS的优点
-　　（1）使用HTTPS协议可认证用户和服务器，确保数据发送到正确的客户机和服务器；
-　　（2）HTTPS协议是由SSL+HTTP协议构建的可进行加密传输、身份认证的网络协议，要比http协议安全，可防止数据在传输过程中不被窃取、改变，确保数据的完整性。
-　　（3）HTTPS是现行架构下最安全的解决方案，虽然不是绝对安全，但它大幅增加了中间人攻击的成本。
+
+* 　　（1）使用HTTPS协议可认证用户和服务器，确保数据发送到正确的客户机和服务器；
+* 　　（2）HTTPS协议是由SSL+HTTP协议构建的可进行加密传输、身份认证的网络协议，要比http协议安全，可防止数据在传输过程中不被窃取、改变，确保数据的完整性。
+* 　　（3）HTTPS是现行架构下最安全的解决方案，虽然不是绝对安全，但它大幅增加了中间人攻击的成本。
+
 ## 5.HTTPS的缺点
-　　（1）HTTPS协议握手阶段比较费时，会使页面的加载时间延长近50%，增加10%到20%的耗电；
-　　（2）HTTPS连接缓存不如HTTP高效，会增加数据开销和功耗，甚至已有的安全措施也会因此而受到影响；
-　　（3）SSL证书需要钱，功能越强大的证书费用越高，个人网站、小网站没有必要一般不会用。
-　 （4）SSL证书通常需要绑定IP，不能在同一IP上绑定多个域名，IPv4资源不可能支撑这个消耗。
-　　（5）HTTPS协议的加密范围也比较有限，在黑客攻击、拒绝服务攻击、服务器劫持等方面几乎起不到什么作用。最关键的，SSL证书的信用链体系并不安全，特别是在某些国家可以控制CA根证书的情况下，中间人攻击一样可行。
+
+* 　　（1）HTTPS协议握手阶段比较费时，会使页面的加载时间延长近50%，增加10%到20%的耗电；
+* 　　（2）HTTPS连接缓存不如HTTP高效，会增加数据开销和功耗，甚至已有的安全措施也会因此而受到影响；
+* 　　（3）SSL证书需要钱，功能越强大的证书费用越高，个人网站、小网站没有必要一般不会用。
+* 　   （4）SSL证书通常需要绑定IP，不能在同一IP上绑定多个域名，IPv4资源不可能支撑这个消耗。
+* 　　（5）HTTPS协议的加密范围也比较有限，在黑客攻击、拒绝服务攻击、服务器劫持等方面几乎起不到什么作用。最关键的，SSL证书的信用链体系并不安全，特别是在某些国家可以控制CA根证书的情况下，中间人攻击一样可行。
 
 ## 6.cookie 和session 的区别：
-cookie数据存放在客户的浏览器上，session数据放在服务器上。
-cookie不是很安全，别人可以分析存放在本地的COOKIE并进行COOKIE欺骗，考虑到安全应当使用session。
-session会在一定时间内保存在服务器上。当访问增多，会比较占用你服务器的性能，考虑到减轻服务器性能方面，应当使用COOKIE。
-单个cookie保存的数据不能超过4K，很多浏览器都限制一个站点最多保存20个cookie。
+
+* cookie数据存放在客户的浏览器上，session数据放在服务器上。
+* cookie不是很安全，别人可以分析存放在本地的COOKIE并进行COOKIE欺骗，考虑到安全应当使用session。
+* session会在一定时间内保存在服务器上。当访问增多，会比较占用你服务器的性能，考虑到减轻服务器性能方面，应当使用COOKIE。
+* 单个cookie保存的数据不能超过4K，很多浏览器都限制一个站点最多保存20个cookie。
 
 ## 7.http方法及功能（get post put..）
-GET 对这个资源的查操作
-POST  向指定资源提交数据进行处理请求。数据被包含在请求体中。POST请求可能会导致新的资源的建立和/或已有资源的修改。（适用于更新操作）
-PUT 从客户端向服务器传送的数据取代指定的文档的内容。（适用于添加操作）
-DELETE  对这个资源的删操作（注意：客户端无法保证删除操作一定会被执行，因为HTTP规范允许服务器在不通知客
-户端的情况下撤销请求）
-HEAD 与GET方法的行为很类似，但服务器在响应中只返回实体的头部分。可以快速获取资源信息，比如资源类型；通过查看响应中的状态码，可以确定资源是否存在；通过查看首部，测试资源是否被修改；
-OPTIONS 用于获取当前URL所支持的方法。若请求成功，则它会在HTTP头中包含一个名为“Allow”的头，值是所支持的方法，如“GET, POST”
-TRACE 会在目的服务器端发起一个“回环”诊断，因为客户端在发起一个请求时，这个请求可能要穿过防火墙、代理、网关、或者其它的一些应用程序。这中间的每个节点都可能会修改原始的HTTP请求，TRACE方法允许客户端在最终将请求发送服务器时，它变成了什么样子。由于有一个“回环”诊断，在请求最终到达服务器时，服务器会弹回一条TRACE响应，并在响应主体中携带它收到的原始请求报文的最终模样。这样客户端就可以查看HTTP请求报文在发送的途中，是否被修改过了
+
+* GET 对这个资源的查操作
+* POST  向指定资源提交数据进行处理请求。数据被包含在请求体中。POST请求可能会导致新的资源的建立和/或已有资源的修改。（适用于更新操作）
+* PUT 从客户端向服务器传送的数据取代指定的文档的内容。（适用于添加操作）
+* DELETE  对这个资源的删操作（注意：客户端无法保证删除操作一定会被执行，因为HTTP规范允许服务器在不通知客
+* 户端的情况下撤销请求）
+* HEAD 与GET方法的行为很类似，但服务器在响应中只返回实体的头部分。可以快速获取资源信息，比如资源类型；通过查看响应中的状态码，可以确定资源是否存在；通过查看首部，测试资源是否被修改；
+* OPTIONS 用于获取当前URL所支持的方法。若请求成功，则它会在HTTP头中包含一个名为“Allow”的头，值是所支持的方法，如“GET, POST”
+* TRACE 会在目的服务器端发起一个“回环”诊断，因为客户端在发起一个请求时，这个请求可能要穿过防火墙、代理、网关、或者其它的一些应用程序。这中间的每个节点都可能会修改原始的HTTP请求，TRACE方法允许客户端在最终将请求发送服务器时，它变成了什么样子。由于有一个“回环”诊断，在请求最终到达服务器时，服务器会弹回一条TRACE响应，并在响应主体中携带它收到的原始请求报文的最终模样。这样客户端就可以查看HTTP请求报文在发送的途中，是否被修改过了
+* 
 
 ## 8.对 https 的了解
-首先讲HTTP的缺点：
-通信使用明文加密，容易遭到窃听
-不验证对方身份，容易遭到伪装
-无法确保报文完整性，容易遭到篡改
-https的出现就是为了解决这三个问题：
-https = 加密 + 认证 + 完整性保护
-采用非对称加密的方式实现秘钥的交换，后续混合加密，实现了机密性
-采用摘要算法（MD5/SHA-2）确保报文完整性
-采用数字签名+第三方证书机构实现身份认证
+
+##### **首先讲HTTP的缺点：**
+* 通信使用明文加密，容易遭到窃听
+* 不验证对方身份，容易遭到伪装
+* 无法确保报文完整性，容易遭到篡改
+##### **https的出现就是为了解决这三个问题：**
+* https = 加密 + 认证 + 完整性保护
+* 采用非对称加密的方式实现秘钥的交换，后续混合加密，实现了机密性
+* 采用摘要算法（MD5/SHA-2）确保报文完整性
+* 采用数字签名+第三方证书机构实现身份认证
 
 ## 9.讲解http1.1 、http2.0、https
-管道机制
+**管道机制**
 因为http1.1支持长连接，发送一个请求之后还可以发送第二个请求，如果第二个请求要等待第一个请求返回之后才发送，效率就很低，所以引入了管道机制，多个请求可以按顺序同时发送，响应按顺序返回
-Content-Length
+**Content-Length**
 因为一个tcp可以同时发送多个请求，我们需要一个字段来区分多个请求，Content-length表示当前请求响应共有多少字段，超过这个值的响应就不是该请求的响应
-分块传输
+**分块传输**
 因为http1.1是按顺序发送请求和响应，如果一个顺序靠前的请求响应时间较长，会阻碍后面请求的响应，造成很大的延迟，这就是线头阻塞。故http1.1支持分块传输：Transfer-Encoding: chunked，每个响应头前都有一个16进制数字表示该块儿大小，如果为0表示本次分块
 http1.1存在问题
 主要还是线头阻塞问题，为了避免这个问题，只有两种方法：一是减少请求数，二是同时多开持久连接。这导致了很多的网页优化技巧，比如合并脚本和样式表、将图片嵌入CSS代码、域名分片（domain sharding）等等。如果HTTP协议设计得更好一些，这些额外的工作是可以避免的。
-http1.1和http1.0对比
-缓存处理：http1.0中只有if-Modified-Since、Expires，http1.1中增加了E-tag、if-None-match、等
-优化带宽和网络请求：如果我们的请求的只是一个资源的一部分，http1.0会全部返回整个资源，造成带宽的浪费，http1.1中增加了range字段，允许请求资源的某部分
-错误通知机制：新增了24个错误状态码
-Host名增加：http1.0认为域名和主机是一一对应的，http1.1增加Host字段，支持多个域名对应一个机器，为虚拟主机的发展奠定了基础
-长连接：支持长连接和管道机制，一定程度上弥补了http1.0每次请求都要重建tcp连接的缺陷
-http2.0/SPDY
-http2.0是基于SPDY的，两者没有太大的区别，主要是header压缩方式以及http2.0支持明文传输。
-对比http1.1，主要区别有以下几个
-多路复用
+##### http1.1和http1.0对比
+
+* 缓存处理：http1.0中只有if-Modified-Since、Expires，http1.1中增加了E-tag、if-None-match、等
+* 优化带宽和网络请求：如果我们的请求的只是一个资源的一部分，http1.0会全部返回整个资源，造成带宽的浪费，http1.1中增加了range字段，允许请求资源的某部分
+* 错误通知机制：新增了24个错误状态码
+* Host名增加：http1.0认为域名和主机是一一对应的，http1.1增加Host字段，支持多个域名对应一个机器，为虚拟主机的发展奠定了基础
+* 长连接：支持长连接和管道机制，一定程度上弥补了http1.0每次请求都要重建tcp连接的缺陷
+
+##### http2.0/SPDY
+http2.0是基于SPDY的，两者没有太大的区别，主要是header压缩方式以及http2.0支持明文传输。对比http1.1，主要区别有以下几个
+**多路复用**
 http2.0一个tcp连接支持多个stream流同时传输
-请求优先级
+**请求优先级**
 多路复用可能会带来一个新的问题，多个请求并发可能导致关键请求被阻塞，故http2.0支持request设置优先级
-header压缩
+**header压缩**
 header中的一些信息是重复的，采用合适的压缩算法减少请求大小
 请求优先级（request prioritization）。多路复用带来一个新的问题是，在连接共享的基础之上有可能会导致关键请求被阻塞。SPDY允许给每个request设置优先级，这样重要的请求就会优先得到响应。比如浏览器加载首页，首页的html内容应该优先展示，之后才是各种静态资源文件，脚本文件等加载，这样可以保证用户能第一时间看到网页内容。
 头部压缩。前面提到HTTP1.x的header很多时候都是重复多余的。选择合适的压缩算法可以减小包的大小和数量。
 基于HTTPS的加密协议传输，大大提高了传输数据的可靠性。
-服务端推送（server push），例如我的网页有一个sytle.css的请求，在客户端收到sytle.css数据的同时，服务端会将sytle.js的文件推送给客户端，当客户端再次尝试获取sytle.js时就可以直接从缓存中获取到，不用再发请求了。
-HTTP2.0
-● HTTP2.0 支持明文 HTTP 传输，而 SPDY 强制使用 HTTPS
-● HTTP2.0 消息头的压缩算法采用 HPACK，而非 SPDY 采用的 DEFLATE
-新的二进制格式（Binary Format），HTTP1.x的解析是基于文本。
-多路复用（MultiPlexing），即连接共享，即每一个request都是是用作连接共享机制的。一个request对应一个id，这样一个连接上可以有多个request，每个连接的request可以随机的混杂在一起，接收方可以根据request的 id将request再归属到各自不同的服务端请求里面。多路复用原理图：
-header压缩，如上文中所言，对前面提到过HTTP1.x的header带有大量信息，而且每次都要重复发送，HTTP2.0使用encoder来减少需要传输的header大小，通讯双方各自cache一份header fields表，既避免了重复header的传输，又减小了需要传输的大小。
-5. 应用层的重置连接
-6. 请求优先级设置
-7. 流量控制
-性能优化
+**服务端推送（server push）**
+例如我的网页有一个sytle.css的请求，在客户端收到sytle.css数据的同时，服务端会将sytle.js的文件推送给客户端，当客户端再次尝试获取sytle.js时就可以直接从缓存中获取到，不用再发请求了。
+**HTTP2.0**
+
+* HTTP2.0 支持明文 HTTP 传输，而 SPDY 强制使用 HTTPS
+* HTTP2.0 消息头的压缩算法采用 HPACK，而非 SPDY 采用的 DEFLATE
+*  新的二进制格式（Binary Format），HTTP1.x的解析是基于文本。
+*   多路复用（MultiPlexing），即连接共享，即每一个request都是是用作连接共享机制的。一个request对应一个id，这样一个连接上可以有多个request，每个连接的request可以随机的混杂在一起，接收方可以根据request的 id将request再归属到各自不同的服务端请求里面。多路复用原理图：
+* header压缩，如上文中所言，对前面提到过HTTP1.x的header带有大量信息，而且每次都要重复发送，HTTP2.0使用encoder来减少需要传输的header大小，通讯双方各自cache一份header fields表，既避免了重复header的传输，又减小了需要传输的大小。
+
+##### 性能优化
 
 1. 减少 HTTP 请求
 2. 静态资源使用 CDN
 3. 善用缓存
 4. 压缩文件
 5. 域名拆分
-   HTTP/2 连接建立过程
-   现在的主流浏览器 HTTP/2 的实现都是基于 SSL/TLS 的，也就是说使用 HTTP/2 的网站都是 HTTPS 协议的，所以本文只讨论基于 SSL/TLS 的 HTTP/2 连接建立过程。
-   基于 SSL/TLS 的 HTTP/2 连接建立过程和 HTTPS 差不多。在 SSL/TLS 握手协商过程中，客户端在 ClientHello 消息中设置 ALPN（应用层协议协商）扩展来表明期望使用 HTTP/2 协议，服务器用同样的方式回复。通过这种方式，HTTP/2 在 SSL/TLS 握手协商过程中就建立起来了。
-   性能优化
-   使用 HTTP/2 代替 HTTP/1.1，本身就是一种巨大的性能提升。
-   这小节要聊的是在 HTTP/1.1 中的某些优化手段，在 HTTP/2 中是不必要的，可以取消的。
-   取消合并资源
-   在 HTTP/1.1 中要把多个小资源合并成一个大资源，从而减少请求。而在 HTTP/2 就不需要了，因为 HTTP/2 所有的请求都可以在一个 TCP 连接发送。合并文件、内联资源、雪碧图、域名分片对于 HTTP/2 来说是不必要的，使用 h2 尽可能将资源细粒化，文件分解地尽可能散，不用担心请求数多
-   取消域名拆分
-   取消域名拆分的理由同上，再多的 HTTP 请求都可以在一个 TCP 连接上发送，所以不需要采取多个域名来突破浏览器 TCP 连接数限制这一规则了。
+
+#### HTTP/2 连接建立过程
+现在的主流浏览器 HTTP/2 的实现都是基于 SSL/TLS 的，也就是说使用 HTTP/2 的网站都是 HTTPS 协议的，所以本文只讨论基于 SSL/TLS 的 HTTP/2 连接建立过程。
+基于 SSL/TLS 的 HTTP/2 连接建立过程和 HTTPS 差不多。在 SSL/TLS 握手协商过程中，客户端在 ClientHello 消息中设置 ALPN（应用层协议协商）扩展来表明期望使用 HTTP/2 协议，服务器用同样的方式回复。通过这种方式，HTTP/2 在 SSL/TLS 握手协商过程中就建立起来了。
+##### 性能优化
+使用 HTTP/2 代替 HTTP/1.1，本身就是一种巨大的性能提升。
+这小节要聊的是在 HTTP/1.1 中的某些优化手段，在 HTTP/2 中是不必要的，可以取消的。
+**取消合并资源**
+在 HTTP/1.1 中要把多个小资源合并成一个大资源，从而减少请求。而在 HTTP/2 就不需要了，因为 HTTP/2 所有的请求都可以在一个 TCP 连接发送。合并文件、内联资源、雪碧图、域名分片对于 HTTP/2 来说是不必要的，使用 h2 尽可能将资源细粒化，文件分解地尽可能散，不用担心请求数多
+**取消域名拆分**
+取消域名拆分的理由同上，再多的 HTTP 请求都可以在一个 TCP 连接上发送，所以不需要采取多个域名来突破浏览器 TCP 连接数限制这一规则了。
+
 
 ## 10.HTTP劫持的实现原理
-　　一般来说HTTP劫持主要通过下面几个步骤来做：标识HTTP连接。在天上飞的很多连接中，有许多种协议，第一步做的就是在TCP连接中，找出应用层采用了HTTP协议的连接，进行标识；篡改HTTP响应体，可以通过网关来获取数据包进行内容的篡改；抢先回包，将篡改后的数据包抢先正常站点返回的数据包先到达用户侧，这样后面正常的数据包在到达之后会被直接丢弃。
-与DNS 劫持的区别举例
-DNS劫持的现象：你输入的网址是http://www.google.com，出来的是百度的页面；HTTP劫持的现象：你打开的是知乎的页面，右下角弹出唐老师的不孕不育广告（2018年更：右下角弹出：偶系渣渣辉）。
+　　**一般来说HTTP劫持主要通过下面几个步骤来做：**
+
+*   标识HTTP连接。在天上飞的很多连接中，有许多种协议，第一步做的就是在TCP连接中，找出应用层采用了HTTP协议的连接，进行标识；
+*   篡改HTTP响应体，可以通过网关来获取数据包进行内容的篡改；
+*   抢先回包，将篡改后的数据包抢先正常站点返回的数据包先到达用户侧，这样后面正常的数据包在到达之后会被直接丢弃。
+
+#### 与DNS 劫持的区别举例
+**DNS劫持的现象：** 你输入的网址是http://www.google.com，出来的是百度的页面；HTTP劫持的现象：你打开的是知乎的页面，右下角弹出唐老师的不孕不育广告（2018年更：右下角弹出：偶系渣渣辉）。
 DNS劫持就是你想去存钱运营商却把你拉到了劫匪手中；而HTTP劫持就是你从服务器买了一包零食，横竖都很恶心人。
 DNS劫持是你想去医院的时候，把你给丢到火车站；HTTP劫持是你去医院的时候，有人半途上车给你塞小广告。
-DNS劫持：在DNS服务器中，将www.xxx.com的域名对应的IP地址进行了变化。你解析出来的域名对应的IP，在劫持前后不一样；HTTP劫持：你DNS解析的域名的IP地址不变。在和网站交互过程中的劫持了你的请求。在网站发给你信息前就给你返回了请求。
+**DNS劫持：** 在DNS服务器中，将www.xxx.com的域名对应的IP地址进行了变化。你解析出来的域名对应的IP，在劫持前后不一样；
+**HTTP劫持：** 你DNS解析的域名的IP地址不变。在和网站交互过程中的劫持了你的请求。在网站发给你信息前就给你返回了请求。
 
-HTTP劫持解决方法
+#### HTTP劫持解决方法
 　　对付HTTP劫持，最好的方法之一，就是使用HTTPS来连接网页。而使用HTTPS，在传输数据过程中，数据是加密的。就如同原先开车被人在车窗塞小广告，现在把窗都关紧，他人自然再也无法插足。
 　　HTTPS不仅可以防止HTTP劫持，也能够较好地防止DNS劫持，这是由于HTTPS的安全是由SSL来保证的，需要正确的证书，连接才会成立。如果DNS把域名解析到了不对应的IP，是无法通过证书认证的，连接会被终止。实际上，现在已经有越来越多的网站支持HTTPS，但为了兼容等问题，不少网站也同时提供HTTP连接，例如著名的视频网站哔哩哔哩。主动使用HTTPS来进行连接，不但有效防止网页劫持，还能够保护隐私。
-
 ## 11.H5新特性和ES6新特性
-语义化的区块和段落元素：<section>,<article>,<nav>,<header>,<footer>,<aside>和<hgroup>
-音频和视频：<audio>和<video>元素嵌入和允许操作新的多媒体内容
-阴影:使用box-shadow给逻辑框设置一个阴影，text-shadow文字加阴影
-圆角：使用border-image和它关联的普通属性，而且可以通过border-radius属性来支持圆角边框
-动画：为你的样式设置动画使用CSS Transitions以在不同的状态间设置动画，或者使用CSS Animations在页面的某些部分设置动画而不需要一个触发事件，你现在可以在页面中控制移动元素了
-flex布局：css多栏布局
-grid布局：网格布局
-线性渐变：使用gradient设置线性渐变
-媒体查询：根据显示设备的特性设置css
-图片边框：使用border-image设置图片边框
-let和const关键字：let关键字定义块作用域变量，const定义常量
-字符串模版：`${}`
-箭头函数：左边是参数集合，右边是函数体
-原生promise对象：将promise对象纳入规范
-symbol：增加symbol数据类型
-ES module: 引用ES module 模块化规范
-变量结构赋值
-async函数
-set和map函数
-for..of循环：用来遍历实现迭代器接口的数据
-class
+
+* 语义化的区块和段落元素：<section>,<article>,<nav>,<header>,<footer>,<aside>和<hgroup>
+* 音频和视频：<audio>和<video>元素嵌入和允许操作新的多媒体内容
+* 阴影:使用box-shadow给逻辑框设置一个阴影，text-shadow文字加阴影
+* 圆角：使用border-image和它关联的普通属性，而且可以通过border-radius属性来支持圆角边框
+* 动画：为你的样式设置动画使用CSS Transitions以在不同的状态间设置动画，或者使用CSS Animations在页面的某些部分设置动画而不需要一个触发事件，你现在可以在页面中控制移动元素了
+* flex布局：css多栏布局
+* grid布局：网格布局
+* 线性渐变：使用gradient设置线性渐变
+* 媒体查询：根据显示设备的特性设置css
+* 图片边框：使用border-image设置图片边框
+* let和const关键字：let关键字定义块作用域变量，const定义常量
+* 字符串模版：`${}`
+* 箭头函数：左边是参数集合，右边是函数体
+* 原生promise对象：将promise对象纳入规范
+* symbol：增加symbol数据类型
+* ES module: 引用ES module 模块化规范
+* 变量结构赋值
+* async函数
+* set和map函数
+* for..of循环：用来遍历实现迭代器接口的数据
+* class
 
 ## 12.手写继承
-
+```js
 //原型链继承
 核心： 将父类的实例作为子类的原型
-
 function Cat(){
 }
 Cat.prototype = new Animal();
@@ -177,474 +203,470 @@ Cat.prototype.name = 'cat';
 //构造继承
 核心：使用父类的构造函数来增强子类实例，等于是复制父类的实例属性给子类（没用到原型）
 function Cat(name){
-Animal.call(this);
-this.name = name || 'Tom';
+  Animal.call(this);
+  this.name = name || 'Tom';
 }
 //实例继承
 核心：为父类实例添加新特性，作为子类实例返回
 function Cat(name){
-var instance = new Animal();
-instance.name = name || 'Tom';
-return instance;
+  var instance = new Animal();
+  instance.name = name || 'Tom';
+  return instance;
 }
 //拷贝继承
 function Cat(name){
-var animal = new Animal();
-for(var p in animal){
-Cat.prototype[p] = animal[p];
-}
-Cat.prototype.name = name || 'Tom';
+  var animal = new Animal();
+  for(var p in animal){
+    Cat.prototype[p] = animal[p];
+  }
+  Cat.prototype.name = name || 'Tom';
 }
 //组合继承
 核心：通过调用父类构造，继承父类的属性并保留传参的优点，然后通过将父类实例作为子类原型，实现函数复用
 function Cat(name){
-Animal.call(this);
-this.name = name || 'Tom';
+  Animal.call(this);
+  this.name = name || 'Tom';
 }
 Cat.prototype = new Animal();
 //寄生组合继承
 核心：通过寄生方式，砍掉父类的实例属性，这样，在调用两次父类的构造的时候，就不会初始化两次实例方法/属性，避免的组合继承的缺点
+function Animal(){
+    this.eat = 'meat'
+}
 function Cat(name){
-Animal.call(this);
-this.name = name || 'Tom';
+  Animal.call(this);
+  this.name = name || 'Tom';
 }
 (function(){
-// 创建一个没有实例方法的类
-var Super = function(){};
-Super.prototype = Animal.prototype;
-//将实例作为子类的原型
-Cat.prototype = new Super();
+  // 创建一个没有实例方法的类
+  var Super = function(){};
+  Super.prototype = Animal.prototype;
+  //将实例作为子类的原型
+  Cat.prototype = new Super();
 })();
 //构造继承
 function Cat(name){
-var instance = new Animal();
-instance.name = name || 'Tom';
-return instance;
+  var instance = new Animal();
+  instance.name = name || 'Tom';
+  return instance;
 }
 //原型式继承
 
 function createObj (o) {
-function F () { }
-F.prototype = o;
-return new F()
+  function F () { }
+  F.prototype = o;
+  return new F()
 }
+```
+## 12.http状态码
 
-12.http状态码
-1xx：信息响应类，表示接收到请求并且继续处理
-2xx：处理成功响应类，表示动作被成功接收、理解和接受
-3xx：重定向响应类，为了完成指定的动作，必须接受进一步处理
-4xx：客户端错误，客户请求包含语法错误或者是不能正确执行
-5xx：服务端错误，服务器不能正确执行一个正确的请求
-100 Continue  继续。客户端应继续其请求
-101 Switching Protocols 切换协议。服务器根据客户端的请求切换协议。只能切换到更高级的协议，例如，切换到HTTP的新版本协议
-200 OK  请求成功。一般用于GET与POST请求
-201 Created 已创建。成功请求并创建了新的资源
-202 Accepted  已接受。已经接受请求，但未处理完成
-203 Non-Authoritative Information 非授权信息。请求成功。但返回的meta信息不在原始的服务器，而是一个副本
-204 No Content  无内容。服务器成功处理，但未返回内容。在未更新网页的情况下，可确保浏览器继续显示当前文档
-205 Reset Content 重置内容。服务器处理成功，用户终端（例如：浏览器）应重置文档视图。可通过此返回码清除浏览器的表单域
-206 Partial Content 部分内容。服务器成功处理了部分GET请求
-300 Multiple Choices  多种选择。请求的资源可包括多个位置，相应可返回一个资源特征与地址的列表用于用户终端（例如：浏览器）选择
-301 Moved Permanently 永久移动。请求的资源已被永久的移动到新URI，返回信息会包括新的URI，浏览器会自动定向到新URI。今后任何新的请求都应使用新的URI代替
-302 Found 临时移动。与301类似。但资源只是临时被移动。客户端应继续使用原有URI
-303 See Other 查看其它地址。与301类似。使用GET和POST请求查看
-304 Not Modified  未修改。所请求的资源未修改，服务器返回此状态码时，不会返回任何资源。客户端通常会缓存访问过的资源，通过提供一个头信息指出客户端希望只返回在指定日期之后修改的资源
-305 Use Proxy 使用代理。所请求的资源必须通过代理访问
-306 Unused  已经被废弃的HTTP状态码
-307 Temporary Redirect  临时重定向。与302类似。使用GET请求重定向
-400 Bad Request 客户端请求的语法错误，服务器无法理解
-401 Unauthorized  请求要求用户的身份认证
-402 Payment Required  保留，将来使用
-403 Forbidden 服务器理解请求客户端的请求，但是拒绝执行此请求
-404 Not Found 服务器无法根据客户端的请求找到资源（网页）。通过此代码，网站设计人员可设置"您所请求的资源无法找到"的个性页面
-405 Method Not Allowed  客户端请求中的方法被禁止
-406 Not Acceptable  服务器无法根据客户端请求的内容特性完成请求
-407 Proxy Authentication Required 请求要求代理的身份认证，与401类似，但请求者应当使用代理进行授权
-408 Request Time-out  服务器等待客户端发送的请求时间过长，超时
-409 Conflict  服务器完成客户端的 PUT 请求时可能返回此代码，服务器处理请求时发生了冲突
-410 Gone  客户端请求的资源已经不存在。410不同于404，如果资源以前有现在被永久删除了可使用410代码，网站设计人员可通过301代码指定资源的新位置
-411 Length Required 服务器无法处理客户端发送的不带Content-Length的请求信息
-412 Precondition Failed 客户端请求信息的先决条件错误
-413 Request Entity Too Large  由于请求的实体过大，服务器无法处理，因此拒绝请求。为防止客户端的连续请求，服务器可能会关闭连接。如果只是服务器暂时无法处理，则会包含一个Retry-After的响应信息
-414 Request-URI Too Large 请求的URI过长（URI通常为网址），服务器无法处理
-415 Unsupported Media Type  服务器无法处理请求附带的媒体格式
-416 Requested range not satisfiable 客户端请求的范围无效
-417 Expectation Failed  服务器无法满足Expect的请求头信息
-500 Internal Server Error 服务器内部错误，无法完成请求
-501 Not Implemented 服务器不支持请求的功能，无法完成请求
-502 Bad Gateway 作为网关或者代理工作的服务器尝试执行请求时，从远程服务器接收到了一个无效的响应
-503 Service Unavailable 由于超载或系统维护，服务器暂时的无法处理客户端的请求。延时的长度可包含在服务器的Retry-After头信息中
-504 Gateway Time-out  充当网关或代理的服务器，未及时从远端服务器获取请求
-505 HTTP Version not supported  服务器不支持请求的HTTP协议的版本，无法完成处理
+* 1xx：信息响应类，表示接收到请求并且继续处理
+* 2xx：处理成功响应类，表示动作被成功接收、理解和接受
+* 3xx：重定向响应类，为了完成指定的动作，必须接受进一步处理
+* 4xx：客户端错误，客户请求包含语法错误或者是不能正确执行
+* 5xx：服务端错误，服务器不能正确执行一个正确的请求
+* 100 Continue  继续。客户端应继续其请求
+* 101 Switching Protocols 切换协议。服务器根据客户端的请求切换协议。只能切换到更高级的协议，例如，切换到HTTP的新版本协议
+* 200 OK  请求成功。一般用于GET与POST请求
+* 201 Created 已创建。成功请求并创建了新的资源
+* 202 Accepted  已接受。已经接受请求，但未处理完成
+* 203 Non-Authoritative Information 非授权信息。请求成功。但返回的meta信息不在原始的服务器，而是一个副本
+* 204 No Content  无内容。服务器成功处理，但未返回内容。在未更新网页的情况下，可确保浏览器继续显示当前文档
+* 205 Reset Content 重置内容。服务器处理成功，用户终端（例如：浏览器）应重置文档视图。可通过此返回码清除浏览器的表单域
+* 206 Partial Content 部分内容。服务器成功处理了部分GET请求
+* 300 Multiple Choices  多种选择。请求的资源可包括多个位置，相应可返回一个资源特征与地址的列表用于用户终端（例如：浏览器）选择
+* 301 Moved Permanently 永久移动。请求的资源已被永久的移动到新URI，返回信息会包括新的URI，浏览器会自动定向到新URI。今后任何新的请求都应使用新的URI代替
+* 302 Found 临时移动。与301类似。但资源只是临时被移动。客户端应继续使用原有URI
+* 303 See Other 查看其它地址。与301类似。使用GET和POST请求查看
+* 304 Not Modified  未修改。所请求的资源未修改，服务器返回此状态码时，不会返回任何资源。客户端通常会缓存访问过的资源，通过提供一个头信息指出客户端希望只返回在指定日期之后修改的资源
+* 305 Use Proxy 使用代理。所请求的资源必须通过代理访问
+* 306 Unused  已经被废弃的HTTP状态码
+* 307 Temporary Redirect  临时重定向。与302类似。使用GET请求重定向
+* 400 Bad Request 客户端请求的语法错误，服务器无法理解
+* 401 Unauthorized  请求要求用户的身份认证
+* 402 Payment Required  保留，将来使用
+* 403 Forbidden 服务器理解请求客户端的请求，但是拒绝执行此请求
+* 404 Not Found 服务器无法根据客户端的请求找到资源（网页）。通过此代码，网站设计人员可设置"您所请求的资源无法找到"的个性页面
+* 405 Method Not Allowed  客户端请求中的方法被禁止
+* 406 Not Acceptable  服务器无法根据客户端请求的内容特性完成请求
+* 407 Proxy Authentication Required 请求要求代理的身份认证，与401类似，但请求者应当使用代理进行授权
+* 408 Request Time-out  服务器等待客户端发送的请求时间过长，超时
+* 409 Conflict  服务器完成客户端的 PUT 请求时可能返回此代码，服务器处理请求时发生了冲突
+* 410 Gone  客户端请求的资源已经不存在。410不同于404，如果资源以前有现在被永久删除了可使用410代码，网站设计人员可通过301代码指定资源的新位置
+* 411 Length Required 服务器无法处理客户端发送的不带Content-Length的请求信息
+* 412 Precondition Failed 客户端请求信息的先决条件错误
+* 413 Request Entity Too Large  由于请求的实体过大，服务器无法处理，因此拒绝请求。为防止客户端的连续请求，服务器可能会关闭连接。如果只是服务器暂时无法处理，则会包含一个Retry-After的响应信息
+* 414 Request-URI Too Large 请求的URI过长（URI通常为网址），服务器无法处理
+* 415 Unsupported Media Type  服务器无法处理请求附带的媒体格式
+* 416 Requested range not satisfiable 客户端请求的范围无效
+* 417 Expectation Failed  服务器无法满足Expect的请求头信息
+* 500 Internal Server Error 服务器内部错误，无法完成请求
+* 501 Not Implemented 服务器不支持请求的功能，无法完成请求
+* 502 Bad Gateway 作为网关或者代理工作的服务器尝试执行请求时，从远程服务器接收到了一个无效的响应
+* 503 Service Unavailable 由于超载或系统维护，服务器暂时的无法处理客户端的请求。延时的长度可包含在服务器的Retry-After头信息中
+* 504 Gateway Time-out  充当网关或代理的服务器，未及时从远端服务器获取请求
+* 505 HTTP Version not supported  服务器不支持请求的HTTP协议的版本，无法完成处理
 
-13.ajax流程讲一下
-1--启动  获取XMlHttpRequest对象       1. 创建 XMLHttpRequest 对象,也就是创建一个异步调用对象
-2--open 打开url通道，并设置异步传输    2. 创建一个新的 HTTP 请求,并指定该 HTTP 请求的方法、URL 及验证信息
-3--send 发送数据到服务器              3. 设置响应 HTTP 请求状态变化的函数
-4--服务器接受数据并处理，处理完成后返回结果         4. 发送 HTTP 请求
-5--客户端接收服务器端返回              5. 获取异步调用返回的数据
-6. 使用 JavaScript 和 DOM 实现局部刷新
+## 13.ajax流程讲一下
+
+* 1--启动  获取XMlHttpRequest对象       1. 创建 XMLHttpRequest 对象,也就是创建一个异步调用对象
+* 2--open 打开url通道，并设置异步传输    2. 创建一个新的 HTTP 请求,并指定该 HTTP 请求的方法、URL 及验证信息
+* 3--send 发送数据到服务器              3. 设置响应 HTTP 请求状态变化的函数
+* 4--服务器接受数据并处理，处理完成后返回结果         4. 发送 HTTP 请求
+* 5--客户端接收服务器端返回              5. 获取异步调用返回的数据
+* 使用 JavaScript 和 DOM 实现局部刷新
+
 readyState是XMLHttpRequest对象的一个属性，用来标识当前XMLHttpRequest对象处于什么状态。
 readyState总共有5个状态值，分别为0~4，每个值代表了不同的含义
-0：初始化，XMLHttpRequest对象还没有完成初始化
-1：载入，XMLHttpRequest对象开始发送请求
-2：载入完成，XMLHttpRequest对象的请求发送完成
-3：解析，XMLHttpRequest对象开始读取服务器的响应
-4：完成，XMLHttpRequest对象读取服务器响应结束
-var Ajax={
-get: function(url, fn) {
-// XMLHttpRequest对象用于在后台与服务器交换数据
-var xhr = new XMLHttpRequest();
-xhr.open('GET', url, true);
-xhr.onreadystatechange = function() {
-// readyState == 4说明请求已完成 readyState 0=>初始化 1=>载入 2=>载入完成 3=>解析 4=>完成
-//
-if (xhr.readyState == 4 && xhr.status == 200 || xhr.status == 304) {
-// 从服务器获得数据
-fn.call(this, xhr.responseText);
-}
-};
-xhr.send();
-},
-// datat应为'a=a1&b=b1'这种字符串格式，在jq里如果data为对象会自动将对象转成这种字符串格式
-post: function (url, data, fn) {
-var xhr = new XMLHttpRequest();
-xhr.open("POST", url, true);
-// 添加http头，发送信息至服务器时内容编码类型
-xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-xhr.onreadystatechange = function() {
-if (xhr.readyState == 4 && (xhr.status == 200 || xhr.status == 304)) {
-fn.call(this, xhr.responseText);
-}
-};
-xhr.send(data);
-}
-}
 
-14.了解promise吗，简单说一下，手写promise
+* 0：初始化，XMLHttpRequest对象还没有完成初始化
+* 1：载入，XMLHttpRequest对象开始发送请求
+* 2：载入完成，XMLHttpRequest对象的请求发送完成
+* 3：解析，XMLHttpRequest对象开始读取服务器的响应
+* 4：完成，XMLHttpRequest对象读取服务器响应结束
+```js
+var Ajax={
+  get: function(url, fn) {
+    // XMLHttpRequest对象用于在后台与服务器交换数据
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.onreadystatechange = function() {
+      // readyState == 4说明请求已完成 readyState 0=>初始化 1=>载入 2=>载入完成 3=>解析 4=>完成
+      //
+      if (xhr.readyState == 4 && xhr.status == 200 || xhr.status == 304) {
+        // 从服务器获得数据
+        fn.call(this, xhr.responseText);
+      }
+    };
+    xhr.send();
+  },
+  // datat应为'a=a1&b=b1'这种字符串格式，在jq里如果data为对象会自动将对象转成这种字符串格式
+  post: function (url, data, fn) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", url, true);
+    // 添加http头，发送信息至服务器时内容编码类型
+    xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState == 4 && (xhr.status == 200 || xhr.status == 304)) {
+        fn.call(this, xhr.responseText);
+      }
+    };
+    xhr.send(data);
+  }
+}
+```
+## 14.了解promise吗，简单说一下，手写promise
 Promise 是一个对象，它在未来的某时会生成一个值：已完成（resolved）的值、或者一个没有完成的理由（例如网络错误）。一个 promise 会有 3 种可能的状态：fulfilled（已完成）、rejected（已拒绝）、pending（等待中）。Promise 的使用者可以附上回调函数来处理已完成的值或者拒绝的原因。
+```js
 function myPromise(constructor){
-let self=this;
-self.status="pending" //定义状态改变前的初始状态
-self.value=undefined;//定义状态为resolved的时候的状态
-self.reason=undefined;//定义状态为rejected的时候的状态
-function resolve(value){
-//两个==="pending"，保证了状态的改变是不可逆的
-if(self.status==="pending"){
-self.value=value;
-self.status="resolved";
-}
-}
-function reject(reason){
-//两个==="pending"，保证了状态的改变是不可逆的
-if(self.status==="pending"){
-self.reason=reason;
-self.status="rejected";
-}
-}
-//捕获构造异常
-try{
-constructor(resolve,reject);
-}catch(e){
-reject(e);
-}
+    let self=this;
+    self.status="pending" //定义状态改变前的初始状态
+    self.value=undefined;//定义状态为resolved的时候的状态
+    self.reason=undefined;//定义状态为rejected的时候的状态
+    function resolve(value){
+        //两个==="pending"，保证了状态的改变是不可逆的
+       if(self.status==="pending"){
+          self.value=value;
+          self.status="resolved";
+       }
+    }
+    function reject(reason){
+        //两个==="pending"，保证了状态的改变是不可逆的
+       if(self.status==="pending"){
+          self.reason=reason;
+          self.status="rejected";
+       }
+    }
+    //捕获构造异常
+    try{
+       constructor(resolve,reject);
+    }catch(e){
+       reject(e);
+    }
 }
 myPromise.prototype.then=function(onFullfilled,onRejected){
-let self=this;
-switch(self.status){
-case "resolved":
-onFullfilled(self.value);
-break;
-case "rejected":
-onRejected(self.reason);
-break;
-default:
-}
-return self
+   let self=this;
+   switch(self.status){
+      case "resolved":
+        onFullfilled(self.value);
+        break;
+      case "rejected":
+        onRejected(self.reason);
+        break;
+      default:
+   }
+   return self
 }
 
 function Promise(fn) {
-this.cbs = [];
+  this.cbs = [];
 
-const resolve = (value) => {
-setTimeout(() => {
-this.data = value;
-this.cbs.forEach((cb) => cb(value));
-});
-}
+  const resolve = (value) => {
+    setTimeout(() => {
+      this.data = value;
+      this.cbs.forEach((cb) => cb(value));
+    });
+  }
 
-fn(resolve.bind(this));
+  fn(resolve.bind(this));
 }
 
 Promise.prototype.then = function (onResolved) {
-return new Promise((resolve) => {
-this.cbs.push(() => {
-const res = onResolved(this.data);
-if (res instanceof Promise) {
-res.then(resolve);
-} else {
-resolve(res);
-}
-});
-});
+  return new Promise((resolve) => {
+    this.cbs.push(() => {
+      const res = onResolved(this.data);
+      if (res instanceof Promise) {
+        res.then(resolve);
+      } else {
+        resolve(res);
+      }
+    });
+  });
 };
 
 new Promise((resolve) => {
-setTimeout(() => {
-resolve(1)
-})
-})
-.then((res) => {
-console.log("res", res)
-return 2
-// return new Promise((resolve) => {
-//   setTimeout(() => {
-//     resolve(2)
-//   })
-// })
-})
-.then((res) => {
-console.log("res", res)
-})
+    setTimeout(() => {
+      resolve(1)
+    })
+  })
+  .then((res) => {
+    console.log("res", res)
+    return 2
+    // return new Promise((resolve) => {
+    //   setTimeout(() => {
+    //     resolve(2)
+    //   })
+    // })
+  })
+  .then((res) => {
+    console.log("res", res)
+  })
 //注释
 function Promise(fn) {
-// Promise resolve时的回调函数集
-this.cbs = [];
+  // Promise resolve时的回调函数集
+  this.cbs = [];
 
-// 传递给Promise处理函数的resolve
-// 这里直接往实例上挂个data
-// 然后把onResolvedCallback数组里的函数依次执行一遍就可以
-const resolve = (value) => {
-// 注意promise的then函数需要异步执行
-setTimeout(() => {
-this.data = value;
-this.cbs.forEach((cb) => cb(value));
-});
-}
+  // 传递给Promise处理函数的resolve
+  // 这里直接往实例上挂个data
+  // 然后把onResolvedCallback数组里的函数依次执行一遍就可以
+  const resolve = (value) => {
+    // 注意promise的then函数需要异步执行
+    setTimeout(() => {
+      this.data = value;
+      this.cbs.forEach((cb) => cb(value));
+    });
+  }
 
-// 执行用户传入的函数
-// 并且把resolve方法交给用户执行
-fn(resolve);
+  // 执行用户传入的函数
+  // 并且把resolve方法交给用户执行
+  fn(resolve);
 }
 Promise.prototype.then = function (onResolved) {
-// 这里叫做promise2
-return new Promise((resolve) => {
-this.cbs.push(() => {
-const res = onResolved(this.data);
-if (res instanceof Promise) {
-// resolve的权力被交给了user promise
-res.then(resolve);
-} else {
-// 如果是普通值 就直接resolve
-// 依次执行cbs里的函数 并且把值传递给cbs
-resolve(res);
-}
-});
-});
+  // 这里叫做promise2
+  return new Promise((resolve) => {
+    this.cbs.push(() => {
+      const res = onResolved(this.data);
+      if (res instanceof Promise) {
+        // resolve的权力被交给了user promise
+        res.then(resolve);
+      } else {
+        // 如果是普通值 就直接resolve
+        // 依次执行cbs里的函数 并且把值传递给cbs
+        resolve(res);
+      }
+    });
+  });
 };
 
 Promise.myAll = function(iterators) {
-const promises = Array.from(iterators);
-const num = promises.length;
-const resolvedList = new Array(num);
-let resolvedNum = 0;
+    const promises = Array.from(iterators);
+    const num = promises.length;
+    const resolvedList = new Array(num);
+    let resolvedNum = 0;
 
-`````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
-return new Promise((resolve, reject) => {
-    promises.forEach((promise, index) => {
-        Promise.resolve(promise)
-            .then(value => {
-                // 保存这个promise实例的value
-                resolvedList[index] = value;
-                // 通过计数器，标记是否所有实例均 fulfilled
-                if (++resolvedNum === num) {
-                    resolve(resolvedList);
-                }
-            })
-            .catch(reject);
+    return new Promise((resolve, reject) => {
+        promises.forEach((promise, index) => {
+            Promise.resolve(promise)
+                .then(value => {
+                    // 保存这个promise实例的value
+                    resolvedList[index] = value;
+                    // 通过计数器，标记是否所有实例均 fulfilled
+                    if (++resolvedNum === num) {
+                        resolve(resolvedList);
+                    }
+                })
+                .catch(reject);
+        });
     });
-});
-`````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
-
 };
 
 //limited
 function limitLoad(urls, handler, limit) {
-// 对数组做一个拷贝
-const sequence = [].concat(urls)
-let promises = [];
+    // 对数组做一个拷贝
+    const sequence = [].concat(urls)
+    let promises = [];
 
-````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
-//并发请求到最大数
-promises = sequence.splice(0, limit).map((url, index) => {
-    // 这里返回的 index 是任务在 promises 的脚标，
-    //用于在 Promise.race 之后找到完成的任务脚标
-    return handler(url).then(() => {
-        return index
+    //并发请求到最大数
+    promises = sequence.splice(0, limit).map((url, index) => {
+        // 这里返回的 index 是任务在 promises 的脚标，
+        //用于在 Promise.race 之后找到完成的任务脚标
+        return handler(url).then(() => {
+            return index
+        });
     });
-});
 
-(async function loop() {
-    let p = Promise.race(promises);
-    for (let i = 0; i < sequence.length; i++) {
-        p = p.then((res) => {
-            promises[res] = handler(sequence[i]).then(() => {
-                return res
-            });
-            return Promise.race(promises)
-        })
-    }
-})()
-````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
-
+    (async function loop() {
+        let p = Promise.race(promises);
+        for (let i = 0; i < sequence.length; i++) {
+            p = p.then((res) => {
+                promises[res] = handler(sequence[i]).then(() => {
+                    return res
+                });
+                return Promise.race(promises)
+            })
+        }
+    })()
 }
 limitLoad(urls, loadImg, 3)
 
+
 Promise.myRace = function(iterators) {
-const promises = Array.from(iterators);
+    const promises = Array.from(iterators);
 
-`````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
-return new Promise((resolve, reject) => {
-    promises.forEach((promise, index) => {
-        Promise.resolve(promise)
-            .then(resolve)
-            .catch(reject);
+    return new Promise((resolve, reject) => {
+        promises.forEach((promise, index) => {
+            Promise.resolve(promise)
+                .then(resolve)
+                .catch(reject);
+        });
     });
-});
-`````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
-
 };
 
 Promise.any = function(iterators) {
-const promises = Array.from(iterators);
-const num = promises.length;
-const rejectedList = new Array(num);
-let rejectedNum = 0;
+    const promises = Array.from(iterators);
+    const num = promises.length;
+    const rejectedList = new Array(num);
+    let rejectedNum = 0;
 
-`````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
-return new Promise((resolve, reject) => {
-    promises.forEach((promise, index) => {
-        Promise.resolve(promise)
-            .then(value => resolve(value))
-            .catch(error => {
-                rejectedList[index] = error;
-                if (++rejectedNum === num) {
-                    reject(rejectedList);
-                }
-            });
+    return new Promise((resolve, reject) => {
+        promises.forEach((promise, index) => {
+            Promise.resolve(promise)
+                .then(value => resolve(value))
+                .catch(error => {
+                    rejectedList[index] = error;
+                    if (++rejectedNum === num) {
+                        reject(rejectedList);
+                    }
+                });
+        });
     });
-});
-`````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
-
 };
-
-15.手写call,apply,bind
+```
+## 15.手写call,apply,bind
+```js
 //手写call
 Function.prototype.myCall = function (obj) {
-const object = obj || window; //如果第一个参数为空则默认指向window对象
-let args = [...arguments].slice(1); //存放参数的数组
-object.func = this;
-const result =  object.func (...args);
-delete object.func; //记住最后要删除掉临时添加的方法，否则obj就无缘无故多了个fn
-return result;
+    const object = obj || window; //如果第一个参数为空则默认指向window对象
+    let args = [...arguments].slice(1); //存放参数的数组
+    object.func = this;
+    const result =  object.func (...args);
+    delete object.func; //记住最后要删除掉临时添加的方法，否则obj就无缘无故多了个fn
+    return result;
 }
 
 //手写apply
 Function.prototype.myApply = function (obj) {
-const object = obj || window; //如果第一个参数为空则默认指向window对象
-if (arguments.length > 1) {
-var args = arguments[1]; //存放参数的数组
-} else {
-var args = []; //存放参数的数组
-}
-object.func = this;
-const result = object.func(...args);
-delete object.func; //记住最后要删除掉临时添加的方法，否则obj就无缘无故多了个fn
-return result;
+    const object = obj || window; //如果第一个参数为空则默认指向window对象
+    if (arguments.length > 1) {
+        var args = arguments[1]; //存放参数的数组
+    } else {
+        var args = []; //存放参数的数组
+    }
+    object.func = this;
+    const result = object.func(...args);
+    delete object.func; //记住最后要删除掉临时添加的方法，否则obj就无缘无故多了个fn
+    return result;
 }
 //手写bind
 Function.prototype.myBind = function (obj) {
-const object = obj || window; //如果第一个参数为空则默认指向window对象
-let self = this;
-let args = [...arguments].slice(1); //存放参数的数组
+    const object = obj || window; //如果第一个参数为空则默认指向window对象
+    let self = this;
+    let args = [...arguments].slice(1); //存放参数的数组
 
-````````````````````````````````````````````````````````````````````````````````````````````````````````````
-return function () {
-    let newArgs = [...arguments]
-    return self.apply(object, args.concat(newArgs))
-}
-````````````````````````````````````````````````````````````````````````````````````````````````````````````
-
+    return function () {
+        let newArgs = [...arguments]
+        return self.apply(object, args.concat(newArgs))
+    }
 }
 //add(1)(2)(3)(4)
 function add(n) {
-var fn = function(m) {
-return add(n + m);
-};
+  var fn = function(m) {
+    return add(n + m);
+  };
 
-fn.valueOf = function() {
-return n;
-};
+  fn.toString = function() {
+    return n;
+  };
 
-fn.toString = function() {
-return '' + n;
-};
 
-return fn;
+  return fn;
 }
+```
 
-16.怎么理解es6箭头函数中的this，它和一般函数的this指向有什么区别呢=>？
-没有this绑定，箭头函数没有自己的this，它会捕获自己在定义时所处的外层执行环境的this，并继承这个this值。所以，箭头函数中this的指向在它被定义的时候就已经确定了，之后永远不会改变。
-没有arguments
-不能通过 new 关键字调用
-没有 new.target
-没有原型
-没有 super
-call/apply/bind方法无法改变箭头函数中this的指向
-虽然箭头函数中的箭头不是运算符，但箭头函数具有与常规函数不同的特殊运算符优先级解析规则。
-箭头函数不支持重名参数
-不能使用 yield 关键字
+## 16.怎么理解es6箭头函数中的this，它和一般函数的this指向有什么区别呢=>？
 
-17.let和const有什么区别
+* 没有this绑定，箭头函数没有自己的this，它会捕获自己在定义时所处的外层执行环境的this，并继承这个this值。所以，箭头函数中this的指向在它被定义的时候就已经确定了，之后永远不会改变。
+* 没有arguments
+* 不能通过 new 关键字调用
+* 没有 new.target
+* 没有原型
+* 没有 super
+* call/apply/bind方法无法改变箭头函数中this的指向
+* 虽然箭头函数中的箭头不是运算符，但箭头函数具有与常规函数不同的特殊运算符优先级解析规则。
+* 箭头函数不支持重名参数
+* 不能使用 yield 关键字
+## 17.let和const有什么区别
 let与const都是只在声明所在的块级作用域内有效。 let声明的变量可以改变，值和类型都可以改变，没有限制。 const 声明的变量第一层不得改变值，这意味着，const一旦声明变量，就必须立即初始化，不能留到以后赋值,
 
-18.如何判断数据类型，如果遇到null呢
-数据类型分为基本类型和引用类型：
-基本类型：String、Number、Boolean、Null、Undefined
-引用类型：Object、Array、Date、Function、Error、RegExp、Math、Number、String、Boolean、Globle
-Object.prototype.toString
+## 18.如何判断数据类型，如果遇到null呢
+**数据类型分为基本类型和引用类型：**
+
+* 基本类型：String、Number、Boolean、Null、Undefined
+* 引用类型：Object、Array、Date、Function、Error、RegExp、Math、Number、String、Boolean、Globle 
+
+
+* * *
+
+
+**Object.prototype.toString**
 prototype.constructor 会被修改Null和undefined不检测，不能垮iframe
 instanceof不能检测出基本类型，且不能跨iframe
 
-19.mvc，mvp和mvvm的区别
-MVC的优缺点
+## 19.mvc，mvp和mvvm的区别
+**MVC的优缺点**
 优点：
+1、把业务逻辑全部分离到Controller中，模块化程度高。当业务逻辑变更的时候，不需要变更View和Model，只需要Controller换成另外一个Controller就行了（Swappable Controller）。
+2、观察者模式可以做到多视图同时更新。
+缺点：
+1、Controller测试困难。因为视图同步操作是由View自己执行，而View只能在有UI的环境下运行。在没有UI环境下对Controller进行单元测试的时候，Controller业务逻辑的正确性是无法验证的：Controller更新Model的时候，无法对View的更新操作进行断言。
+2、View无法组件化。View是强依赖特定的Model的，如果需要把这个View抽出来作为一个另外一个应用程序可复用的组件就困难了。因为不同程序的的Domain Model是不一样的
 
-1. 把业务逻辑全部分离到Controller中，模块化程度高。当业务逻辑变更的时候，不需要变更View和Model，只需要Controller换成另外一个Controller就行了（Swappable Controller）。
-2. 观察者模式可以做到多视图同时更新。
-   缺点：
-3. Controller测试困难。因为视图同步操作是由View自己执行，而View只能在有UI的环境下运行。在没有UI环境下对Controller进行单元测试的时候，Controller业务逻辑的正确性是无法验证的：Controller更新Model的时候，无法对View的更新操作进行断言。
-4. View无法组件化。View是强依赖特定的Model的，如果需要把这个View抽出来作为一个另外一个应用程序可复用的组件就困难了。因为不同程序的的Domain Model是不一样的
-
-MVP（Passive View）的优缺点
+**MVP（Passive View）的优缺点**
 优点：
-
-1. 便于测试。Presenter对View是通过接口进行，在对Presenter进行不依赖UI环境的单元测试的时候。可以通过Mock一个View对象，这个对象只需要实现了View的接口即可。然后依赖注入到Presenter中，单元测试的时候就可以完整的测试Presenter业务逻辑的正确性。这里根据上面的例子给出了Presenter的单元测试样例。
-2. View可以进行组件化。在MVP当中，View不依赖Model。这样就可以让View从特定的业务场景中脱离出来，可以说View可以做到对业务逻辑完全无知。它只需要提供一系列接口提供给上层操作。这样就可以做高度可复用的View组件。
-   缺点：
-3. Presenter中除了业务逻辑以外，还有大量的View->Model，Model->View的手动同步逻辑，造成Presenter比较笨重，维护起来会比较困难。
-
-MVVM的优缺点
+1、便于测试。Presenter对View是通过接口进行，在对Presenter进行不依赖UI环境的单元测试的时候。可以通过Mock一个View对象，这个对象只需要实现了View的接口即可。然后依赖注入到Presenter中，单元测试的时候就可以完整的测试Presenter业务逻辑的正确性。这里根据上面的例子给出了Presenter的单元测试样例。
+2、View可以进行组件化。在MVP当中，View不依赖Model。这样就可以让View从特定的业务场景中脱离出来，可以说View可以做到对业务逻辑完全无知。它只需要提供一系列接口提供给上层操作。这样就可以做高度可复用的View组件。
+缺点：
+1、Presenter中除了业务逻辑以外，还有大量的View->Model，Model->View的手动同步逻辑，造成Presenter比较笨重，维护起来会比较困难。
+**MVVM的优缺点**
 优点：
+1、提高可维护性。解决了MVP大量的手动View和Model同步的问题，提供双向绑定机制。提高了代码的可维护性。
+2、简化测试。因为同步逻辑是交由Binder做的，View跟着Model同时变更，所以只需要保证Model的正确性，View就正确。大大减少了对View同步更新的测试。
+缺点：
+1、过于简单的图形界面不适用，或说牛刀杀鸡。
+2、对于大型的图形应用程序，视图状态较多，ViewModel的构建和维护的成本都会比较高。
+3、数据绑定的声明是指令式地写在View的模版当中的，这些内容是没办法去打断点debug的。
 
-1. 提高可维护性。解决了MVP大量的手动View和Model同步的问题，提供双向绑定机制。提高了代码的可维护性。
-2. 简化测试。因为同步逻辑是交由Binder做的，View跟着Model同时变更，所以只需要保证Model的正确性，View就正确。大大减少了对View同步更新的测试。
-   缺点：
-3. 过于简单的图形界面不适用，或说牛刀杀鸡。
-4. 对于大型的图形应用程序，视图状态较多，ViewModel的构建和维护的成本都会比较高。
-5. 数据绑定的声明是指令式地写在View的模版当中的，这些内容是没办法去打断点debug的。
-
-20.笔试题topK用什么排序？(答了堆排序)堆排序时间复杂度，稳定性以及什么是稳定排序
+## 20.topK用什么排序？堆排序时间复杂度，稳定性以及什么是稳定排序
 全局排序，取第 k 个数
 我们能想到的最简单的就是将数组进行排序（可以是最简单的快排），取前 K 个数就可以了，so easy
 构造前 k 个最大元素小顶堆，取堆顶
@@ -656,118 +678,122 @@ MVVM的优缺点
 遍历完成后，堆顶的数据就是第 K 大的数据
 对于一个基本有序数组用什么排序比较好？(答了冒泡)冒泡时间复杂度是多少，最好的情况是多少
 
-21.实现三栏布局，中间200px，两边自适应
+## 21.实现三栏布局，中间200px，两边自适应
+```css
 .wrap{
-display:flex;
-flex-direction:row;
-margin-top:20px;
+  display:flex;
+  flex-direction:row;
+  margin-top:20px;
 }
 .center{
-width:800px;
-text-align:center;
-background:#ccc;
+  width:800px;
+  text-align:center;
+  background:#ccc;
 }
 .left,.right{
-flex-grow: 1;
-line-height: 30px;
-background:red;
+  flex-grow: 1;
+  line-height: 30px;
+  background:red;
 }
+```
+## 22.position有哪些值，定位参考哪一个元素
 
-22.position有哪些值，定位参考哪一个元素
-static,正常流
-relative,定位的起始位置为此元素原先在文档流的位置。
-fixed,元素的位置相对于浏览器窗口是固定位置。
-absolute,定位的起始位置为最近的父元素(非static)
-sticky,基于用户的滚动位置来定位
+* static,正常流
+* relative,定位的起始位置为此元素原先在文档流的位置。
+* fixed,元素的位置相对于浏览器窗口是固定位置。
+* absolute,定位的起始位置为最近的父元素(非static)
+* sticky,基于用户的滚动位置来定位
 
-23.让一个元素不可见的方法有哪些
-overflow:hidden
-opacity:0；
-visibility:hidden
-display:none
-position:absolute
-clip(clip-path):rect()/inset()/polygon()
-z-index:-1000
-transform:scaleY(0)
+## 23.让一个元素不可见的方法有哪些
 
-24.css3翻转
+* overflow:hidden
+* opacity:0；
+* visibility:hidden
+* display:none
+* position:absolute
+* clip(clip-path):rect()/inset()/polygon()
+* z-index:-1000
+* transform:scaleY(0)
+
+## 24.css3翻转
+```css
 .mirrorRotateLevel {
-transform: rotateY(180deg);   /* 水平镜像翻转 */
+    transform: rotateY(180deg);   /* 水平镜像翻转 */
 }
 .mirrorRotateVertical {
-transform: rotateX(180deg);   /* 垂直镜像翻转 */
+    transform: rotateX(180deg);   /* 垂直镜像翻转 */
 }
 transform:scaleX(-1);
-
-25.数组深拷贝，浅拷贝，对象深拷贝，浅拷贝
+```
+## 25.数组深拷贝，浅拷贝，对象深拷贝，浅拷贝
+```js
 Object.assign() Array.prototype.concat() JSON.parse(JSON.stringify())
 function deepClone(source){
-const targetObj = source.constructor === Array ? [] : {}; // 判断复制的目标是数组还是对象
-for(let keys in source){ // 遍历目标
-if(source.hasOwnProperty(keys)){
-if(source[keys] && typeof source[keys] === 'object'){ // 如果值是对象，就递归一下
-targetObj[keys] = source[keys].constructor === Array ? [] : {};
-targetObj[keys] = deepClone(source[keys]);
-}else{ // 如果不是，就直接赋值
-targetObj[keys] = source[keys];
-}
-}
-}
-return targetObj;
+  const targetObj = source.constructor === Array ? [] : {}; // 判断复制的目标是数组还是对象
+  for(let keys in source){ // 遍历目标
+    if(source.hasOwnProperty(keys)){
+      if(source[keys] && typeof source[keys] === 'object'){ // 如果值是对象，就递归一下
+        targetObj[keys] = source[keys].constructor === Array ? [] : {};
+        targetObj[keys] = deepClone(source[keys]);
+      }else{ // 如果不是，就直接赋值
+        targetObj[keys] = source[keys];
+      }
+    }
+  }
+  return targetObj;
 }
 function deepClone(source){
-if(typeof source == ('string'|| 'number')){
-return source;
-}
-if(!source || typeof source != 'object'){
-throw new Error("error arguments!")
-}
-var newSource = source.constructor === Array? [] : {};
-for(var key in source){
-if(source.hasOwnProperty(key)){
-if(typeof source[key] !== 'object'){
-newSource[key] = source[key]
-}else{
-newSource[key] = deepClone(source[key])
-}
-}
-}
-return newSource;
+  if(typeof source == ('string'|| 'number')){
+    return source;
+  }
+  if(!source || typeof source != 'object'){
+    throw new Error("error arguments!")
+  }
+  var newSource = source.constructor === Array? [] : {};
+  for(var key in source){
+    if(source.hasOwnProperty(key)){
+      if(typeof source[key] !== 'object'){
+        newSource[key] = source[key]
+      }else{
+        newSource[key] = deepClone(source[key])
+      }
+    }
+  }
+  return newSource;
 }
 //循环引用
 function clone(target, map = new Map()) {
-if (typeof target === 'object') {
-let cloneTarget = Array.isArray(target) ? [] : {};
-if (map.get(target)) {
-return map.get(target);
-}
-map.set(target, cloneTarget);
-for (const key in target) {
-cloneTarget[key] = clone(target[key], map);
-}
-return cloneTarget;
-} else {
-return target;
-}
+    if (typeof target === 'object') {
+        let cloneTarget = Array.isArray(target) ? [] : {};
+        if (map.get(target)) {
+            return map.get(target);
+        }
+        map.set(target, cloneTarget);
+        for (const key in target) {
+            cloneTarget[key] = clone(target[key], map);
+        }
+        return cloneTarget;
+    } else {
+        return target;
+    }
 };
-
-26.webpack路由懒加载
+```
+## 26.webpack路由懒加载
 路由懒加载也可以叫做路由组件懒加载，最常用的是通过 import() 来实现它。
 function load(component) {
-return () => import(`views/${component}`)
+    return () => import(`views/${component}`)
 }
 然后通过Webpack编译打包后，会把每个路由组件的代码分割成一一个js文件，初始化时不会加载这些js文件，只当激活路由组件才会去加载对应的js文件。
 
-27.es6中异步请求多个数据如何操作
+## 27.es6中异步请求多个数据如何操作
 promise.all需慎用，否则会造成其中一个请求失败而导致程序阻塞的风险，解决方法：封装的async/await中无论success/fail都是用resolve返回data，由返回值进行判断而非使用会导致阻塞的reject
-
-28.对象的解构赋值
+## 28.对象的解构赋值
 数组的元素是按次序排列的，变量的取值由它的位置决定；
 对象的属性没有次序，变量必须与属性同名，才能取到正确的值。
 函数的rest参数
 rest参数用于获取函数的多余参数，这样就不需要使用arguments对象了。rest参数搭配的变量是一个数组，该变量将多余的参数放入数组中。
 
-29.SPA优缺点
+## 29.SPA优缺点
 SPA：单页面web应用，一般整个应用只有一个html页面，通过前端路由实现无刷新跳转。
 Vue就是SPA应用的典型代表，特别是配合webpack等前端构建工具，加载页面的时候将JavaScript、CSS统一加载，然后通过监听url的hash实现内容切换。
 优点：
@@ -785,186 +811,198 @@ Vue就是SPA应用的典型代表，特别是配合webpack等前端构建工具�
 服务端开启gzip压缩
 打包文件分包，提取公共文件包
 
-30.mvc和mvvm的区别，mvvm是为了解决什么
+
+## 30.mvc和mvvm的区别，mvvm是为了解决什么
 ViewController太过臃肿，把业务逻辑剥离出来形成viewModel。由ViewController来调度ViewModel和View。
+1、关注Model的变化，让MVVM框架去自动更新DOM的状态，从而把发者从操作DOM的繁琐步骤中解脱出来！
+2、由于控制器的功能大都移动到View上处理，大大的对控制器进行了瘦身。
+3、可以对View或ViewController的数据处理部分抽象出来一个函数处理model。这样它们专职页面布局和页面跳转，它们必然更一步的简化。
+4、提高可维护性
+5、可测试。界面素来是比较难于测试的，而现在测试可以针对ViewModel来写。
+6、低耦合可重用：视图（View）可以独立于Model变化和修改，一个ViewModel可以绑定不同的"View"上，当View变化的时候Model不可以不变，当Model变化的时候View也可以不变。你可以把一些视图逻辑放在一个ViewModel里面，让很多view重用这段视图逻辑。
 
-1. 关注Model的变化，让MVVM框架去自动更新DOM的状态，从而把发者从操作DOM的繁琐步骤中解脱出来！
-2. 由于控制器的功能大都移动到View上处理，大大的对控制器进行了瘦身。
-3. 可以对View或ViewController的数据处理部分抽象出来一个函数处理model。这样它们专职页面布局和页面跳转，它们必然更一步的简化。
-4. 提高可维护性
-5. 可测试。界面素来是比较难于测试的，而现在测试可以针对ViewModel来写。
-6. 低耦合可重用：视图（View）可以独立于Model变化和修改，一个ViewModel可以绑定不同的"View"上，当View变化的时候Model不可以不变，当Model变化的时候View也可以不变。你可以把一些视图逻辑放在一个ViewModel里面，让很多view重用这段视图逻辑。
-
-31.箭头函数的作用
+## 31.箭头函数的作用
 更简短的函数；
 更直观的作用域和this的绑定(不绑定this)
 由于箭头函数没有自己的this指针，通过call()或者apply()方法调用一个函数时，只能传递参数(不能绑定this)，它们的第一个参数会被忽略。
 
-32.xss和csrf如何防范
-XSS攻击可分为三类，分别为储存型、反射型、DOM型。
-存储型
+## 32.xss和csrf如何防范
+**XSS攻击可分为三类，分别为储存型、反射型、DOM型。**
+**存储型**
+1、储存型XSS攻击将恶意代码提交到网站数据库当中
+2、当用户使用客户端向网站请求数据时，恶意代码从服务器传回，拼接在HTML中返回给客户端
+3、客户端在解析代码时，恶意代码被执行
+常见应用场景：论坛发帖、商品评论、用户私信等
+**反射型**
+1、反射型XSS攻击构造出包含恶意代码的url，url指向目标网站，但是参数可以拼接恶意代码
+2、诱导用户点击，点击后会向服务端发送请求，同时查询参数携带恶意代码
+3、服务端返回时将恶意代码直接拼接在HTML中
+4、客户端接收并解析执行代码时，恶意代码也被执行
+常见应用场景：通过 URL 传递参数的场景，如网站搜索、跳转
+**DOM型**
+DOM型XSS攻击是通过恶意代码修改DOM的结构，是单纯发生在客户端的攻击。
+以下情况有可能会被利用：
+1、<script>标签
+2、javascript:??执行符(a标签的href属性,url上)
+3、innerHTML=?? 或 .outerHTML=?? 或 setTimeout(??) 或 setInterval(??)(执行js)
+4、document.write(??) 或 eval(??)
+5、location、onclick、onerror、onload、onmouseover等事件（执行js）
+6、在 style 属性和标签中，包含类似 background-image:url(“javascript:…”);的代码（新版本浏览器已经可以防范）。
+7、在 style 属性和标签中，包含类似 expression(…) 的 CSS 表达式代码(新版本浏览器已经可以防范)
 
-1. 储存型XSS攻击将恶意代码提交到网站数据库当中
-2. 当用户使用客户端向网站请求数据时，恶意代码从服务器传回，拼接在HTML中返回给客户端
-3. 客户端在解析代码时，恶意代码被执行
-   常见应用场景：论坛发帖、商品评论、用户私信等
-   反射型
-4. 反射型XSS攻击构造出包含恶意代码的url，url指向目标网站，但是参数可以拼接恶意代码
-5. 诱导用户点击，点击后会向服务端发送请求，同时查询参数携带恶意代码
-6. 服务端返回时将恶意代码直接拼接在HTML中
-7. 客户端接收并解析执行代码时，恶意代码也被执行
-   常见应用场景：通过 URL 传递参数的场景，如网站搜索、跳转
-   DOM型
-   DOM型XSS攻击是通过恶意代码修改DOM的结构，是单纯发生在客户端的攻击。
-   以下情况有可能会被利用：
-8. <script>标签
-9. javascript:??执行符(a标签的href属性,url上)
-10. innerHTML=?? 或 .outerHTML=?? 或 setTimeout(??) 或 setInterval(??)(执行js)
-11. document.write(??) 或 eval(??)
-12. location、onclick、onerror、onload、onmouseover等事件（执行js）
-13. 在 style 属性和标签中，包含类似 background-image:url(“javascript:…”);的代码（新版本浏览器已经可以防范）。
-14. 在 style 属性和标签中，包含类似 expression(…) 的 CSS 表达式代码(新版本浏览器已经可以防范)
-
-防范方法
+**防范方法**
 现在主流的浏览器内置了防范 XSS 的措施，例如 CSP。但对于开发者来说，也应该寻找可靠的解决方案来防止 XSS 攻击。
-
-1. 防范反射型、存储型 XSS：
-   采用纯前端渲染
-   拼接 HTML 时，要对 HTML 进行充分转义(利用一些转义库)
-2. 防范 DOM 型 XSS
-   将用户输入插入 HTML 或拼接 js   执行时，要进行编码，将一些特殊字符转义。
-   escapeHTML() 按照如下规则进行转义：
-   & -> &amp;
-   <-> &lt;
-
+**1、防范反射型、存储型 XSS：**
+采用纯前端渲染
+拼接 HTML 时，要对 HTML 进行充分转义(利用一些转义库)
+**2、防范 DOM 型 XSS**
+* 将用户输入插入 HTML 或拼接 js   执行时，要进行编码，将一些特殊字符转义。
+* escapeHTML() 按照如下规则进行转义：
+```html
+& -> &amp;
+<-> &lt;
 > -> &gt;
-> "-> &quot;
-> ' -> '
-> / -> /
-> 对于 a 标签的 href 等外链请求，添加白名单进行过滤，禁止以 javascript: 开头的链接，和其他非法的 scheme。
-> 不要相信用户的任何输入。 对于用户的任何输入要进行检查、过滤和转义。建立可信任的字符和 HTML 标签白名单，对于不在白名单之列的字符或者标签进行过滤或编码。
-> 在 XSS 防御中，输入检查一般是检查用户输入的数据中是否包含 <，> 等特殊字符，如果存在，则对特殊字符进行过滤或编码，这种方式也称为 XSS Filter。
+"-> &quot;
+' -> &#x27;
+/ -> &#x2F;
+```
 
-3. 其他防范措施
-   HttpOnly 防止劫取 Cookie
-   输入检查
-   对于用户的任何输入要进行检查、过滤和转义。
-   输出检查
-   服务端的输出也可能会存在问题。一般来说，除富文本的输出外，在变量输出到 HTML 页面时，可以使用编码或转义的方式来防御 XSS 攻击。
+* 对于 a 标签的 href 等外链请求，添加白名单进行过滤，禁止以 javascript: 开头的链接，和其他非法的 scheme。
+* 不要相信用户的任何输入。 对于用户的任何输入要进行检查、过滤和转义。建立可信任的字符和 HTML 标签白名单，对于不在白名单之列的字符或者标签进行过滤或编码。
+* 在 XSS 防御中，输入检查一般是检查用户输入的数据中是否包含 <，> 等特殊字符，如果存在，则对特殊字符进行过滤或编码，这种方式也称为 XSS Filter。
 
-CSRF原理
+**3、其他防范措施**
+HttpOnly 防止劫取 Cookie
+输入检查
+对于用户的任何输入要进行检查、过滤和转义。
+输出检查
+服务端的输出也可能会存在问题。一般来说，除富文本的输出外，在变量输出到 HTML 页面时，可以使用编码或转义的方式来防御 XSS 攻击。
+
+##### CSRF原理
 CSRF，即 Cross Site Request Forgery，中译是跨站请求伪造，是一种劫持受信任用户向服务器发送非预期请求的攻击方式。
 举个例子：
 小明在刷gmail，突然看到一条链接，好奇点开了发现是个空白链接，就不管他，继续刷其他的。看似没有什么事情发生，但实际上攻击者利用这个所谓的空白页给小明偷偷设置了一个过滤规则，这个规则使他收到的邮件都转发给了攻击者。
+**1、攻击特点**
+攻击一般发起在第三方网站，而不是被攻击的网站。被攻击的网站无法防止攻击发生。
+攻击利用受害者在被攻击网站的登录凭证，冒充受害者提交操作；而不是直接窃取数据。
+整个过程攻击者并不能获取到受害者的登录凭证，仅仅是“冒用”。
+跨站请求可以用各种方式：图片URL、超链接、CORS、Form提交等等。部分请求方式可以直接嵌入在第三方论坛、文章中，难以进行追踪。
+**2、攻击流程**
+受害者登录a.com，并保留了登录凭证（Cookie）。
+攻击者引诱受害者访问了b.com。
+b.com 向 a.com 发送了一个请求：a.com/act=xx。浏览器会默认携带a.com的Cookie。
+a.com接收到请求后，对请求进行验证，并确认是受害者的凭证，误以为是受害者自己发送的请求。
+a.com以受害者的名义执行了act=xx。
+攻击完成，攻击者在受害者不知情的情况下，冒充受害者，让a.com执行了自己定义的操作。
+**3、防范措施**
+CSRF通常从第三方网站发起，被攻击的网站无法防止攻击发生，只能通过增强自己网站针对CSRF的防护能力来提升安全性。
 
-1. 攻击特点
-   攻击一般发起在第三方网站，而不是被攻击的网站。被攻击的网站无法防止攻击发生。
-   攻击利用受害者在被攻击网站的登录凭证，冒充受害者提交操作；而不是直接窃取数据。
-   整个过程攻击者并不能获取到受害者的登录凭证，仅仅是“冒用”。
-   跨站请求可以用各种方式：图片URL、超链接、CORS、Form提交等等。部分请求方式可以直接嵌入在第三方论坛、文章中，难以进行追踪。
-2. 攻击流程
-   受害者登录a.com，并保留了登录凭证（Cookie）。
-   攻击者引诱受害者访问了b.com。
-   b.com 向 a.com 发送了一个请求：a.com/act=xx。浏览器会默认携带a.com的Cookie。
-   a.com接收到请求后，对请求进行验证，并确认是受害者的凭证，误以为是受害者自己发送的请求。
-   a.com以受害者的名义执行了act=xx。
-   攻击完成，攻击者在受害者不知情的情况下，冒充受害者，让a.com执行了自己定义的操作。
-3. 防范措施
-   CSRF通常从第三方网站发起，被攻击的网站无法防止攻击发生，只能通过增强自己网站针对CSRF的防护能力来提升安全性。
-   方法一：同源验证
-   既然CSRF大多来自第三方网站，那么我们就直接禁止外域（或者不受信任的域名）对我们发起请求。
-   判断是否来自外域：
-   在HTTP协议中，每一个异步请求都会携带两个Header，用于标记来源域名：
-   Origin Header
-   Referer Header
-   Referer Check防盗链
-   两个Header在浏览器发起请求时，大多数情况会自动带上，并且不能由前端自定义内容。 服务器可以通过解析这两个Header中的域名，确定请求的来源域。
-   注意：
-   Origin 在 IE11 中不存在，在 302 重定向中也不存在，Referrer 可以被前端隐藏不携带，如果不存在这两个请求头时，需要利用其它方式验证：
-   当访问源是外域时，直接拒绝访问，但要注意的是，需要过滤掉 html 页面请求，因为当请求来自搜索引擎结果页面时，也是外域访问，会被当做 CSRF 请求。
-   方法二、CSRF Token 验证
-4. 服务器生成一个Token，并把这个Token利用算法加密。要注意，这个Token不能放在Cookie中，要不然又会被冒用，一般是放在session中。
-5. 在页面加载时，在每个a标签和form标签中放入Token
-6. 服务器验证Token是否正确
-   缺点：实现较为复杂，工作量大，可能出现遗漏。
-   方法三、双重Cookie验证
-   利用CSRF攻击不能获取到用户Cookie的特点，我们可以要求Ajax和表单请求携带一个Cookie中的值。
-7. 在用户访问网站页面时，向请求域名注入一个Cookie，内容为随机字符串。
-8. 在前端向后端发起请求时，取出Cookie，并添加到URL的参数中。
-9. 后端接口验证Cookie中的字段与URL参数中的字段是否一致，不一致则拒绝。
-   优点：
-   无需使用Session，适用面更广，易于实施。
-   Token储存于客户端中，不会给服务器带来压力。
-   相对于Token，实施成本更低，可以在前后端统一拦截校验，而不需要一个个接口和页面添加。
-   缺点：
-   Cookie中增加了额外的字段。
-   如果有其他漏洞（例如XSS），攻击者可以注入Cookie，那么该防御方式失效。
-   难以做到子域名的隔离。
-   为了确保Cookie传输安全，采用这种防御方式的最好确保用整站HTTPS的方式，如果还没切HTTPS的使用这种方式也会有风险。
-   方法四、Samesite Cookie属性
-   Google起草了一份草案来改进HTTP协议，那就是为Set-Cookie响应头新增Samesite属性，它用来标明这个 Cookie是个“同站 Cookie”，同站Cookie只能作为第一方Cookie，不能作为第三方Cookie，Samesite 有两个属性值，分别是 Strict 和 Lax：
-   方法五、验证码
+* 方法一：同源验证
 
-33.es5和es6有什么区别
-块级作用域 关键字let, 常量const
-函数参数 - 默认值、参数打包、 数组展开（Default 、Rest 、Spread）
-箭头函数 Arrow functions
-字符串模板 Template strings
-生成器 （Generators）
-Class
+既然CSRF大多来自第三方网站，那么我们就直接禁止外域（或者不受信任的域名）对我们发起请求。
+判断是否来自外域：
+在HTTP协议中，每一个异步请求都会携带两个Header，用于标记来源域名：
+Origin Header
+Referer Header
+Referer Check防盗链
+两个Header在浏览器发起请求时，大多数情况会自动带上，并且不能由前端自定义内容。 服务器可以通过解析这两个Header中的域名，确定请求的来源域。
+注意：Origin 在 IE11 中不存在，在 302 重定向中也不存在，Referrer 可以被前端隐藏不携带，如果不存在这两个请求头时，需要利用其它方式验证：
+当访问源是外域时，直接拒绝访问，但要注意的是，需要过滤掉 html 页面请求，因为当请求来自搜索引擎结果页面时，也是外域访问，会被当做 CSRF 请求。
 
-34.spa原理，为什么url改变不会刷新页面
+* 方法二、CSRF Token 验证
+
+1、服务器生成一个Token，并把这个Token利用算法加密。要注意，这个Token不能放在Cookie中，要不然又会被冒用，一般是放在session中。
+2、在页面加载时，在每个a标签和form标签中放入Token
+3、服务器验证Token是否正确
+缺点：实现较为复杂，工作量大，可能出现遗漏。
+
+* 方法三、双重Cookie验证
+
+利用CSRF攻击不能获取到用户Cookie的特点，我们可以要求Ajax和表单请求携带一个Cookie中的值。
+1、在用户访问网站页面时，向请求域名注入一个Cookie，内容为随机字符串。
+2、在前端向后端发起请求时，取出Cookie，并添加到URL的参数中。
+3、后端接口验证Cookie中的字段与URL参数中的字段是否一致，不一致则拒绝。
+优点：
+无需使用Session，适用面更广，易于实施。
+Token储存于客户端中，不会给服务器带来压力。
+相对于Token，实施成本更低，可以在前后端统一拦截校验，而不需要一个个接口和页面添加。
+缺点：
+Cookie中增加了额外的字段。
+如果有其他漏洞（例如XSS），攻击者可以注入Cookie，那么该防御方式失效。
+难以做到子域名的隔离。
+为了确保Cookie传输安全，采用这种防御方式的最好确保用整站HTTPS的方式，如果还没切HTTPS的使用这种方式也会有风险。
+
+* 方法四、Samesite Cookie属性
+
+Google起草了一份草案来改进HTTP协议，那就是为Set-Cookie响应头新增Samesite属性，它用来标明这个 Cookie是个“同站 Cookie”，同站Cookie只能作为第一方Cookie，不能作为第三方Cookie，Samesite 有两个属性值，分别是 Strict 和 Lax：
+方法五、验证码
+
+
+## 33.es5和es6有什么区别
+
+* 块级作用域 关键字let, 常量const
+* 函数参数 - 默认值、参数打包、 数组展开（Default 、Rest 、Spread）
+* 箭头函数 Arrow functions
+* 字符串模板 Template strings
+* 生成器 （Generators）
+* Class
+
+
+## 34.spa原理，为什么url改变不会刷新页面
 单页的页面即为一个html页面，可以理解为，某个应用中所有的其他页面和单元均为一个预设好的根页面的子组件，通过js，css来控制众多子组件的替换和更新，从而达到模拟页面跳转的情景。我把这种应用称之为spa。
 监听url中hash值得变化
 HTML5 history模式
 
-35.localStorage大小，我们可以看到5120KB是默认值，整个域的存储大小。
+## 35.localStorage大小
+我们可以看到5120KB是默认值，整个域的存储大小。
 
-36.写个继承，es6继承是如何做到的，手写继承
+## 36.写个继承，es6继承是如何做到的，手写继承
+```js
+
 function f(phrase) {
-return class {
-sayHi() { alert(phrase) }
-}
+  return class {
+    sayHi() { alert(phrase) }
+  }
 }
 class User extends f("Hello") {}
 new User().sayHi(); // Hello
 
 class CreateSoldier{
-constructor(name){
-this.type = 'soldier';
-this.name = name
-}
-shot(){
-console.log("shot")
-}
-}
-class CreateTreatSoldier extends CreateSoldier{
-constructor(name){
-super(name)
-}
-treat(){
-console.log('treat')
-}
-}
-
-37.作用域和作用域链
+     constructor(name){
+         this.type = 'soldier';
+         this.name = name
+     }
+     shot(){
+         console.log("shot")
+     }
+ }
+ class CreateTreatSoldier extends CreateSoldier{
+     constructor(name){
+         super(name)
+     }
+     treat(){
+         console.log('treat')
+     }
+ }
+```
+## 37.作用域和作用域链
 在JavaScript中的作用域有全局作用域、局部作用域以及块级作用域。
 局部作用域：和全局作用域相反，局部作用域的变量即是在特定代码块中才能过访问，对于外部是不能够访问的。
 块级作用域：在代码块中使用let定义的变量，只能在当前代码块中进行访问。块级作用域可以形成暂时性死区。
 作用域就是在函数内部可以访问外部变量的机制，使用链式查找哪些变量可以被函数内部访问。
 
-执行环境（Execution Context）执行上下文
+**执行环境（Execution Context）执行上下文**
 EC定义了变量和函数有权访问的其他数据。JavaScript中，函数在运行时都会产生一个执行环境，并且JS引擎还会产生一个与当前EC相关联的变量对象（Variable Object，即VO）。EC中所有定义的变量和方法都包含在VO中。全局执行环境是最外围的执行环境，它是一个“兜底”的执行环境。
 
-首先，创建一个全局对象
-JS引擎会创建一个执行环境栈
-JS引擎会创造一个和EC相关连的变量对象VO
-每一个函数在定义的时候，都会创建一个与之关联的[[scopes]]属性，该scope总是指向定义函数时的执行环境EC。
-作用域链的作用就是保证当前环境对其有权访问的变量和方法进行有序的访问 ——JavaScript高级程序设计
-作用域是在运行时代码中的某些特定部分中变量，函数和对象的可访问性。换句话说，作用域决定了代码区块中变量和其他资源的可见性。
-执行上下文在运行时确定，随时可能改变；作用域在定义时就确定，并且不会改变。
+* 首先，创建一个全局对象
+* JS引擎会创建一个执行环境栈
+* JS引擎会创造一个和EC相关连的变量对象VO
+* 每一个函数在定义的时候，都会创建一个与之关联的[[scopes]]属性，该scope总是指向定义函数时的执行环境EC。
+* 作用域链的作用就是保证当前环境对其有权访问的变量和方法进行有序的访问 ——JavaScript高级程序设计
+* 作用域是在运行时代码中的某些特定部分中变量，函数和对象的可访问性。换句话说，作用域决定了代码区块中变量和其他资源的可见性。
+* 执行上下文在运行时确定，随时可能改变；作用域在定义时就确定，并且不会改变。
 
-38、什么是执行上下文？
+## 38.什么是执行上下文？
 执行上下文是评估和执行 JavaScript 代码的环境的抽象概念。每当 Javascript 代码在运行的时候，它都是在执行上下文中运行。
 执行上下文的类型
 JavaScript 中有三种执行上下文类型。
@@ -976,7 +1014,7 @@ Eval 函数执行上下文 — 执行在 eval 函数内部的代码也会有它�
 当 JavaScript 引擎第一次遇到你的脚本时，它会创建一个全局的执行上下文并且压入当前执行栈。每当引擎遇到一个函数调用，它会为该函数创建一个新的执行上下文并压入栈的顶部。
 引擎会执行那些执行上下文位于栈顶的函数。当该函数执行结束时，执行上下文从栈中弹出，控制流程到达当前栈中的下一个上下文。
 
-39.vue数据绑定
+## 39.vue数据绑定
 vue是通过数据劫持的方式来做数据绑定的，其中最核心的方法便是通过Object.defineProperty()来实现对属性的劫持，达到监听数据变动的目的
 Vue 的响应式，核心机制是 观察者模式。
 数据是被观察的一方，发生改变时，通知所有的观察者，这样观察者可以做出响应，比如，重新渲染然后更新视图。
@@ -984,36 +1022,37 @@ Vue 的响应式，核心机制是 观察者模式。
 vue源码数据绑定以及diff算法
 https://www.infoq.cn/article/uDLCPKH4iQb0cR5wGY7f
 
-40.template转虚拟dom
+## 40.template转虚拟dom
 baseCompile首先会将模板template进行parse得到一个AST语法树，再通过optimize做一些优化，最后通过generate得到render以及staticRenderFns。
+```js
 //dom转虚拟don
 // 将dom树节点劫持到对象中中进行解析
 function nodeToObject(vnode) {
-let parseProps = {}
-// 定义一个parseProps接收节点属性
-for (let [key, val] of Object.entries(vnode.attributes)) {
-parseProps[val.name] = val.value
-}
-let dealChildren = []
-// 定义一个数组接收节点的所有子节点，对于元素则递归调用nodeToObject方法
-let parsrChildren = Array.from(vnode.childNodes)
-parsrChildren.forEach((ele) => {
-if (ele instanceof Element) {
-dealChildren.push(nodeToObject(ele))
-} else {
-dealChildren.push(ele.nodeValue)
-}
-})
-let flag = {
-tag: vnode.tagName.toLowerCase(),
-props: parseProps,
-children: dealChildren
-}
+  let parseProps = {}
+  // 定义一个parseProps接收节点属性
+  for (let [key, val] of Object.entries(vnode.attributes)) {
+    parseProps[val.name] = val.value
+  }
+  let dealChildren = []
+  // 定义一个数组接收节点的所有子节点，对于元素则递归调用nodeToObject方法
+  let parsrChildren = Array.from(vnode.childNodes)
+  parsrChildren.forEach((ele) => {
+    if (ele instanceof Element) {
+      dealChildren.push(nodeToObject(ele))
+    } else {
+      dealChildren.push(ele.nodeValue)
+    }
+  })
+  let flag = {
+    tag: vnode.tagName.toLowerCase(),
+    props: parseProps,
+    children: dealChildren
+  }
 
-// 返回一个虚拟Dom Tree
-return h(flag.tag, flag.props, flag.children)
+  // 返回一个虚拟Dom Tree
+  return h(flag.tag, flag.props, flag.children)
 }
-
+```
 41.vue中计算属性如何根据data里的值发生改变
 计算属性通常依赖于其他数据属性。对于依赖属性的任何改变都会触发计算属性的逻辑。计算属性基于它们的依赖关系进行缓存，因此只有当依赖项发生变化时，它们才会重新运行，否则他会使用缓存中的属性值。计算属性在默认情况下是getters，但是如果需要实现类似的功能，则可以设置setter函数。
 
